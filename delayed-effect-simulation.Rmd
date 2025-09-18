@@ -23,11 +23,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-::: {.callout}
-**Update (2025-07-10):** Minor edits to compute cumulative power by analysis
-and correct table numbering. Render with gsDesign2 1.1.5 and simtrial 1.0.0.
-:::
-
 ## Overview
 
 We consider asymptotic approximations and corresponding simulations for
