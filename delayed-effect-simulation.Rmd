@@ -2,12 +2,13 @@
 title: "Delayed effect asymptotic approximations and simulation"
 subtitle: "Spending time examples"
 author: "Keaven Anderson"
-date: "2025-06-19"
+date: "2025-09-18"
 bibliography: design.bib
 
 output:
-  blogdown::html_page:
+  rmarkdown::pdf_document:
     toc: true
+    number_sections: true
 
 editor_options:
   markdown:
@@ -23,7 +24,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-## Overview
+# Overview
 
 We consider asymptotic approximations and corresponding simulations for
 group sequential designs with delayed treatment effects.
@@ -73,7 +74,7 @@ While spending will always be an implicit or indirect function of event count,
 the function can be much easier to express by using the concept of spending time
 as in the cases noted above.
 
-## Computing preliminaries
+# Computing preliminaries
 
 Attach packages.
 
@@ -87,7 +88,6 @@ library(ggplot2)
 library(parallelly)
 library(doFuture)
 library(purrr)
-library(DT)
 library(simtrial)
 library(tictoc)
 library(cowplot)
@@ -118,12 +118,12 @@ set.seed(42)
 nsim <- 100000
 ```
 
-## Design assumptions
+# Design assumptions
 
 We begin with assumptions for the group sequential design as well as for
 alternate scenarios.
 The approach taken for the asymptotic normal approximation for the logrank test
-uses an average hazard ratio approach for approximating treatment effect (@AHR2020).
+uses an average hazard ratio approach for approximating treatment effect [@AHR2020].
 When group sequential analyses are performed, we justify the joint distribution
 of logrank tests by the theory of @Tsiatis1982.
 Simulations are easily run for each scenario to verify asymptotic approximations
@@ -165,18 +165,15 @@ scenarios |>
     hr1 = factor(hr1),
     hr2 = factor(hr2)
   ) |>
-  datatable(
-    options = list(
-      pageLength = 5,
-      autoWidth = TRUE,
-      columnDefs = list(list(className = "dt-center", targets = "_all"))
-    ),
-    filter = "top",
-    caption = "Table 1: Failure rate scenarios studied"
-  )
+  gt(groupname_col = NULL) |>
+  fmt_number(columns = c(`Control Median`, Delay), decimals = 0) |>
+  fmt_number(columns = c(hr1, hr2), decimals = 2, drop_trailing_zeros = TRUE) |>
+  cols_align(align = "center", columns = everything()) |>
+  tab_header(title = "Table 1: Failure rate scenarios studied") |>
+  tab_options(table.font.size = px(12))
 ```
 
-## Fixed design
+# Fixed design
 
 ```{r}
 # Fixed design, single stratum
@@ -368,10 +365,11 @@ output |>
   fmt_number(columns = c(AHR, Power, "HR at bound"), decimals = 3) |>
   tab_header("Table 2: Asymptotic approximations of design operating characteristics",
     subtitle = "Evaluating final analysis timing"
-  )
+  ) |>
+  tab_options(table.font.size = px(11))
 ```
 
-### Simulation of fixed design
+## Simulation of fixed design
 
 We use simulation to verify the power approximations above as well as whether
 Type I error is controlled at the targeted one-sided 2.5%.
@@ -438,20 +436,17 @@ sim_summary |>
     "E(Events)" = round(`E(Events)`, 1),
     "SD(Events)" = round(`SD(Events)`, 1)
   ) |>
-  group_by(Cut) |>
-  datatable(
-    options = list(
-      pageLength = 5,
-      autoWidth = TRUE,
-      columnDefs = list(list(className = "dt-center", targets = "_all"))
-    ),
-    filter = "top",
-    caption = "Table 3: Simulation results by scenario and data cutoff method"
-  )
-# gt() |>
-#   fmt_number(columns = c(HR, "Power", "SE(Power)"), decimals = 3) |>
-#   fmt_number(columns = c("E(Duration)", "SD(Duration)", "E(Events)", "SD(Events)"), decimals = 1) |>
-#   tab_header(title = "Table 3: Simulation results by scenario and data cutoff method")
+  arrange(Cut, Scenario) |>
+  gt(groupname_col = "Cut") |>
+  fmt_number(columns = c(Power, `SE(Power)`), decimals = 4) |>
+  fmt_number(columns = c(HR), decimals = 3) |>
+  fmt_number(
+    columns = c(`E(Duration)`, `SD(Duration)`, `E(Events)`, `SD(Events)`),
+    decimals = 1
+  ) |>
+  cols_align(align = "center", columns = everything()) |>
+  tab_header(title = "Table 3: Simulation results by scenario and data cutoff method") |>
+  tab_options(table.font.size = px(11))
 ```
 
 Simulations were performed with the `simtrial::sim_fixed_n()` function using
@@ -459,7 +454,7 @@ parallel computing with `r cores_used` CPUs. While the user sets up the
 number of CPU cores used and parallel backend, the parallel computing is
 otherwise implemented automatically by `simtrial::sim_fixed_n()`.
 
-## Group sequential design
+# Group sequential design
 
 Now we derive the planned design with the *Original plan* assumptions above.
 The design has the following additional characteristics.
@@ -526,12 +521,13 @@ treatment effect to be strong is important in the scenarios that follow.
 xx |>
   summary() |>
   as_gt(
-    title = "Group sequential design based on original assumptions",
-    subtitle = "Table 4: Delayed effect for 4 months, HR = 0.6 thereafter"
-  )
+    title = "Table 4: Group sequential design based on original assumptions",
+    subtitle = "Delayed effect for 4 months, HR = 0.6 thereafter"
+  ) |>
+  tab_options(table.font.size = px(12))
 ```
 
-### Same design with weighted logrank
+## Same design with weighted logrank
 
 We consider the same sample size and analysis timing but using the
 modestly weighted logrank (MWLR) test of @magirr2019modestly.
@@ -564,9 +560,10 @@ mb_design <- gs_power_wlr(
 mb_design |>
   summary() |>
   as_gt(
-    title = "Group sequential design based on original assumptions",
-    subtitle = "Table 5: Testing with MWLR using maximum weight of 2"
-  )
+    title = "Table 5: Group sequential design based on original assumptions",
+    subtitle = "Testing with MWLR using maximum weight of 2"
+  ) |>
+  tab_options(table.font.size = px(12))
 ```
 
 We check that the cumulative $\alpha$-spending at each analysis is as expected:
@@ -575,7 +572,7 @@ We check that the cumulative $\alpha$-spending at each analysis is as expected:
 sfLDOF(alpha = 0.025, t = mb_design$analysis$info_frac0)$spend
 ```
 
-## Accumulation of events and average treatment effect over time
+# Accumulation of events and average treatment effect over time
 
 In addition to the different failure rate scenarios, we consider 3
 enrollment scenarios to achieve the targeted sample size:
@@ -603,7 +600,8 @@ enroll_rate_scenarios |>
   cols_label(
     duration = "Target duration (months)", rate = "Enrollment rate per month",
     Enrollment = "Scenario"
-  )
+  ) |>
+  tab_options(table.font.size = px(12))
 ```
 
 Now we compute expected events and average hazard ratio over time for each
@@ -652,7 +650,9 @@ p1 <- output |> ggplot(aes(x = time, y = event, color = Scenario, lty = Enrollme
   geom_hline(yintercept = max(xx$analysis$event), linetype = "dashed") +
   scale_x_continuous(breaks = seq(0, 48, 12)) +
   guides(lty = "none", color = "none") +
-  ggsci::scale_color_futurama() +
+  cowplot::theme_half_open() +
+  cowplot::background_grid() +
+  ggsci::scale_color_observable() +
   ylab("Expected events") +
   xlab("Month")
 
@@ -660,24 +660,29 @@ p2 <- output |> ggplot(aes(x = time, y = ahr, color = Scenario, lty = Enrollment
   geom_line() +
   scale_x_continuous(breaks = seq(0, 48, 12)) +
   guides(lty = "none", color = "none") +
-  ggsci::scale_color_futurama() +
+  cowplot::theme_half_open() +
+  cowplot::background_grid() +
+  ggsci::scale_color_observable() +
   ylab("Average hazard ratio") +
   xlab("Month")
 
 p3 <- output |> ggplot(aes(x = event, y = ahr, color = Scenario, lty = Enrollment)) +
   geom_line() +
   geom_vline(xintercept = max(xx$analysis$event), linetype = "dashed") +
-  ggsci::scale_color_futurama() +
+  cowplot::theme_half_open() +
+  cowplot::background_grid() +
+  ggsci::scale_color_observable() +
   guides(color = guide_legend(title = "Failure rate")) +
   ylab("Average hazard ratio") +
   xlab("Expected events") +
   theme(legend.position = "right")
 ```
 
-```{r}
+```{r, fig.width=10, fig.height=8, out.width="100%"}
 top_row <- cowplot::plot_grid(p1, p2, labels = c("A", "B"), label_size = 12)
 
-cowplot::plot_grid(top_row, p3,
+cowplot::plot_grid(
+  top_row, p3,
   labels = c("", "C"), label_size = 12, ncol = 1,
   rel_heights = c(0.4, 0.6)
 )
@@ -689,46 +694,54 @@ enrollment rate scenario. We add a plot of the expected information fraction
 for the scenarios above using the planned maximum information fraction from
 the original design as the denominator.
 
-```{r}
+```{r, fig.width=10, fig.height=8, out.width="100%"}
 p1 <- output |>
   filter(Enrollment == "Original") |>
-  ggplot(aes(x = time, y = event, lty = Scenario)) +
+  ggplot(aes(x = time, y = event, lty = Scenario, color = Scenario)) +
   geom_line() +
   geom_hline(yintercept = max(xx$analysis$event), linetype = "dashed") +
   scale_x_continuous(breaks = seq(0, 48, 12)) +
   guides(lty = "none", color = "none") +
-  ggsci::scale_color_futurama() +
+  cowplot::theme_half_open() +
+  cowplot::background_grid() +
+  ggsci::scale_color_observable() +
   ylab("E(Events)") +
   xlab("Month")
 
 p2 <- output |>
   filter(Enrollment == "Original") |>
-  ggplot(aes(x = time, y = ahr, lty = Scenario)) +
+  ggplot(aes(x = time, y = ahr, lty = Scenario, color = Scenario)) +
   geom_line() +
   scale_x_continuous(breaks = seq(0, 48, 12)) +
   guides(lty = "none", color = "none") +
-  ggsci::scale_color_futurama() +
+  cowplot::theme_half_open() +
+  cowplot::background_grid() +
+  ggsci::scale_color_observable() +
   ylab("AHR") +
   xlab("Month")
 
 p3 <- output |>
   filter(Enrollment == "Original") |>
-  ggplot(aes(x = event, y = ahr, lty = Scenario)) +
+  ggplot(aes(x = event, y = ahr, lty = Scenario, color = Scenario)) +
   geom_line() +
   geom_vline(xintercept = max(xx$analysis$event), linetype = "dashed") +
-  ggsci::scale_color_futurama() +
+  guides(lty = "none", color = "none") +
+  cowplot::theme_half_open() +
+  cowplot::background_grid() +
+  ggsci::scale_color_observable() +
   guides(lty = "none") +
   ylab("AHR") +
-  xlab("E(Events)") +
-  theme(legend.position = "right")
+  xlab("E(Events)")
 
 p4 <- output |>
   filter(Enrollment == "Original") |>
   mutate(IF = info0 / max(xx$analysis$info0)) |>
-  ggplot(aes(x = time, y = IF, lty = Scenario)) +
+  ggplot(aes(x = time, y = IF, lty = Scenario, color = Scenario)) +
   geom_line() +
   scale_x_continuous(breaks = seq(0, 48, 12)) +
-  ggsci::scale_color_futurama() +
+  cowplot::theme_half_open() +
+  cowplot::background_grid() +
+  ggsci::scale_color_observable() +
   ylab("E(IF)") +
   xlab("Month") +
   geom_hline(yintercept = 1, linetype = "dashed") +
@@ -758,7 +771,7 @@ cowplot::plot_grid(
 )
 ```
 
-## Alternate analysis timing and $\alpha$-spending strategies
+# Alternate analysis timing and $\alpha$-spending strategies
 
 Timing of analyses and $\alpha$-spending are done 3 ways:
 
@@ -786,7 +799,9 @@ enrollRates <- xx$enroll_rate
 # Planned information fraction at interim(s) and final
 planned_IF <- xx$analysis$event / max(xx$analysis$event)
 # Spending time entered in timing for planned spending
-upar_planned_spending <- list(sf = gsDesign::sfLDOF, total_spend = alpha, timing = planned_IF)
+upar_planned_spending <- list(
+  sf = gsDesign::sfLDOF, total_spend = alpha, timing = planned_IF
+)
 # Information fraction (event-based) spending
 max_info0 <- max(xx$analysis$info0)
 upar_IF_spending <- list(
@@ -805,6 +820,8 @@ analysisTimes <- xx$analysis$time
 ```
 
 The following table displays the results.
+
+\small
 
 ```{r}
 output <- NULL
@@ -895,6 +912,8 @@ for (i in 1:nrow(scenarios)) {
 }
 ```
 
+\normalsize
+
 The critical difference here is demonstrated when events accrue faster than
 expected due to the treatment benefit emerging later.
 Analysis timing is the same for both spending methods.
@@ -908,6 +927,8 @@ Being able to preserve the largest nominal bound for the final analysis is
 in the general spirit of setting higher bounds at interim analysis if
 an early stop is to be justified.
 
+\small
+
 ```{r}
 output |>
   select(-c(i, "Control Median", Delay, HR1, HR2)) |>
@@ -915,46 +936,19 @@ output |>
     Spending = factor(Spending, levels = c("IF", "Planned", "min(IF, Planned)")),
     Scenario = factor(Scenario)
   ) |>
-  datatable(
-    options =
-      list(
-        filter = "top",
-        pageLength = 25,
-        dom = "Bfrtip",
-        buttons = c("copy", "csv", "excel"),
-        scrollX = TRUE,
-        columnDefs = list(
-          list(width = "35px", targets = c(0)), # Strategy column
-          list(width = "45px", targets = c(1)), # Scenario column
-          list(width = "45px", targets = c(7)) # Nominal p column
-          # list(width = '30px', targets = c(2, 3, 4)),  # Control Median, Delay, HR1 columns
-          # list(width = '25px', targets = c(5)),  # HR2 column
-          # list(width = '35px', targets = c(7, 8, 9)),  # Power, AHR, HR at bound columns
-          # list(width = '30px', targets = c(10, 11))  # IF and Spending time columns
-        )
-      ),
-    filter = "top",
-    caption = "Table 7: Design characteristics by spending strategy across scenarios"
+  arrange(Scenario, Spending, Analysis) |>
+  gt(groupname_col = "Scenario") |>
+  fmt_number(columns = c(N, Events, Time), decimals = 1) |>
+  fmt_number(
+    columns = c(Power, AHR, `HR at bound`, IF, `Spending time`, `Nominal p`),
+    decimals = 3
   ) |>
-  formatRound(columns = c("N", "Events", "Time"), digits = 1) |>
-  # formatRound(columns = c("Nominal p"), digits = 4) |>
-  formatRound(columns = c("Power", "AHR", "HR at bound", "IF", "Spending time", "Nominal p"), digits = 3) |>
-  htmlwidgets::onRender("
-function(el, x) {
-$(el).find('table').css('font-size', '0.6em');
-$(el).find('td').css('padding', '1px 1px');
-$(el).find('th').css('padding', '1px 1px');
-$(el).find('table').css('width', 'auto');
-$(el).find('.dataTables_wrapper').css('width', 'auto');
-
-// Adjust filter box widths to match column widths
-var columnWidths = [35, 45, 30, 30, 30, 25, 45, 35, 35, 35, 30, 30];
-$(el).find('input').each(function(i) {
-$(this).css('width', columnWidths[i] + 'px');
-});
-}
-")
+  cols_align(align = "center", columns = everything()) |>
+  tab_header(title = "Table 7: Design characteristics by spending strategy across scenarios") |>
+  tab_options(table.font.size = px(10), latex.use_longtable = TRUE)
 ```
+
+\normalsize
 
 Now we summarize design characteristics by spending strategy across scenarios.
 We see that using the minimum of planned and actual spending retains the
@@ -971,13 +965,16 @@ all strategies have similar power.
 The final analysis nominal p-value is highest for the minimum of planned and
 actual spending, regardless of scenario (E).
 
-```{r, fig.height=8, fig.width=10, out.width="100%", dpi=300}
+```{r, fig.width=10, fig.height=8, out.width="100%"}
 # Power plot
 p1 <- output |>
   filter(Analysis == 3) |>
   ggplot(aes(x = Scenario, y = Power, fill = Spending)) +
   geom_bar(stat = "identity", position = "dodge") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  cowplot::theme_half_open() +
+  cowplot::background_grid(major = "x") +
+  ggsci::scale_fill_observable(alpha = 0.8) +
+  coord_flip() +
   ylab("Power") +
   xlab("Scenario")
 
@@ -986,7 +983,10 @@ p2 <- output |>
   filter(Analysis == 3) |>
   ggplot(aes(x = Scenario, y = Events, fill = Spending)) +
   geom_bar(stat = "identity", position = "dodge") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  cowplot::theme_half_open() +
+  cowplot::background_grid(major = "x") +
+  ggsci::scale_fill_observable(alpha = 0.8) +
+  coord_flip() +
   ylab("Events") +
   xlab("Scenario")
 
@@ -995,15 +995,21 @@ p3 <- output |>
   filter(Analysis == 3) |>
   ggplot(aes(x = Scenario, y = `HR at bound`, fill = Spending)) +
   geom_bar(stat = "identity", position = "dodge") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  cowplot::theme_half_open() +
+  cowplot::background_grid(major = "x") +
+  ggsci::scale_fill_observable(alpha = 0.8) +
+  coord_flip() +
   ylab("HR at bound") +
   xlab("Scenario")
 
 # Display plots with increased height
-cowplot::plot_grid(p1, p2, p3, ncol = 1, labels = c("A", "B", "C"), rel_heights = c(1, 1, 1))
+cowplot::plot_grid(
+  p1, p2, p3,
+  ncol = 1, labels = c("A", "B", "C"), rel_heights = c(1, 1, 1)
+)
 ```
 
-## Simulation to verify operating characteristics
+# Simulation to verify operating characteristics
 
 We focus on the case where events accrue faster than planned to ensure that
 adapting spending is not impacting Type I error as well as to confirm power
@@ -1011,7 +1017,7 @@ with the different strategies.
 We write a function to simulate a trial, including cutting off for analyses
 with different strategies.
 
-### Simulate a single trial and perform tests
+## Simulate a single trial and perform tests
 
 ```{r}
 # Convert failure rates to simulation format
@@ -1222,11 +1228,13 @@ simulate_a_trial <- function(
 }
 ```
 
-For each trial simulated there are 2 x 3 x 4 = 24 analyses performed,
+For each trial simulated there are $2 \times 3 \times 4 = 24$ analyses performed,
 one for each of the 4 cutting-spending strategies (time, events, max of time
 and event with either event-based or minimum of planned and actual information
 fraction spending), 2 tests (logrank and Magirr-Burman) as well as 3 analyses
 (2 interims and final).
+
+\small
 
 ```{r}
 output <- simulate_a_trial(
@@ -1254,29 +1262,19 @@ output |>
     info0 = info0,
     info = info
   ) |>
-  datatable(
-    options = list(
-      filter = "top", pageLength = 25, dom = "Bfrtip",
-      buttons = c("copy", "csv", "excel"), scrollX = TRUE
-    ),
-    filter = "top",
-    caption = paste("Table 8: Example output from a single trial simulation")
-  ) |>
-  formatRound(columns = c("Time", "info0", "info"), digits = 1) |>
-  formatRound(columns = c("IF", "sTime", "Bound", "z"), digits = 2) |>
-  formatRound(columns = c("spend"), digits = 3) |>
-  htmlwidgets::onRender("
-function(el, x) {
-$(el).find('table').css('font-size', '0.6em');
-$(el).find('td').css('padding', '1px 1px');
-$(el).find('th').css('padding', '1px 1px');
-$(el).find('table').css('width', 'auto');
-$(el).find('.dataTables_wrapper').css('width', 'auto');
-}
-")
+  arrange(test, Cut, Spending, Analysis) |>
+  gt(groupname_col = "test") |>
+  fmt_number(columns = c(Time, Events, info0, info), decimals = 1) |>
+  fmt_number(columns = c(IF, sTime, Bound, z), decimals = 2) |>
+  fmt_number(columns = c(spend), decimals = 3) |>
+  cols_align(align = "center", columns = everything()) |>
+  tab_header(title = "Table 8: Example output from a single trial simulation") |>
+  tab_options(table.font.size = px(9), latex.use_longtable = TRUE)
 ```
 
-### Simulate multiple trials in parallel
+\normalsize
+
+## Simulate multiple trials in parallel
 
 Now we simulate all trials with a parallel computing strategy.
 We evaluate the different cutting strategies and compare spending-time-based
@@ -1387,30 +1385,23 @@ result_summary |>
     "E(IF)" = `E(IF)`,
     "E(sTime)" = `E(sTime)`
   ) |>
-  datatable(
-    options = list(
-      filter = "top", pageLength = 25, dom = "Bfrtip",
-      buttons = c("copy", "csv", "excel"), scrollX = TRUE
-    ),
-    filter = "top",
-    caption = paste("Table 9: Simulation results summary (based on", nsim, "simulations per scenario)")
+  arrange(Scenario, Test, Cut, Spending, Analysis) |>
+  gt(groupname_col = "Scenario") |>
+  fmt_number(columns = c(`E(Time)`, `E(Events)`), decimals = 1) |>
+  fmt_number(columns = c(`E(Spend)`, Power), decimals = 4) |>
+  fmt_number(columns = c(`E(IF)`), decimals = 3) |>
+  fmt_number(columns = c(`E(sTime)`), decimals = 2) |>
+  cols_align(align = "center", columns = everything()) |>
+  tab_header(
+    title = paste(
+      "Table 9: Simulation results summary (based on",
+      nsim, "simulations per scenario)"
+    )
   ) |>
-  formatRound(columns = c("E(Time)", "E(Events)"), digits = 1) |>
-  formatRound(columns = c("E(Spend)", "Power"), digits = 4) |>
-  formatRound(columns = c("E(IF)"), digits = 3) |>
-  formatRound(columns = c("E(sTime)"), digits = 2) |>
-  htmlwidgets::onRender("
-function(el, x) {
-$(el).find('table').css('font-size', '0.6em');
-$(el).find('td').css('padding', '1px 1px');
-$(el).find('th').css('padding', '1px 1px');
-$(el).find('table').css('width', 'auto');
-$(el).find('.dataTables_wrapper').css('width', 'auto');
-}
-")
+  tab_options(table.font.size = px(9), latex.use_longtable = TRUE)
 ```
 
-```{r, fig.height=8, fig.width=10, out.width="100%", dpi=300}
+```{r, fig.width=10, fig.height=8, out.width="100%"}
 power_summary <- result_summary |>
   group_by(Scenario, test, Cut, Spending) |>
   summarize(
@@ -1425,7 +1416,10 @@ p1 <- power_summary |>
   ggplot(aes(x = Scenario, y = Power, fill = CutSp)) +
   geom_bar(stat = "identity", position = "dodge") +
   facet_wrap(~test) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  cowplot::theme_half_open() +
+  cowplot::background_grid(major = "x") +
+  ggsci::scale_fill_observable(alpha = 0.8) +
+  coord_flip() +
   ylab("Power") +
   xlab("Scenario") +
   # Make legend label "Cut.Spending"
@@ -1435,7 +1429,11 @@ p2 <- power_summary |>
   ggplot(aes(x = Scenario, y = `Events`, fill = Cut)) +
   geom_bar(stat = "identity", position = "dodge") +
   facet_wrap(~test) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  cowplot::theme_half_open() +
+  cowplot::background_grid(major = "x") +
+  ggsci::scale_fill_observable(alpha = 0.8) +
+  coord_flip() +
+  theme(plot.margin = margin(r = 108)) +
   ylab("Mean Events") +
   xlab("Scenario")
 
@@ -1443,15 +1441,22 @@ p3 <- power_summary |>
   ggplot(aes(x = Scenario, y = `Final spend`, fill = CutSp)) +
   geom_bar(stat = "identity", position = "dodge") +
   facet_wrap(~test) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  cowplot::theme_half_open() +
+  cowplot::background_grid(major = "x") +
+  ggsci::scale_fill_observable(alpha = 0.8) +
+  coord_flip() +
+  theme(axis.text.x = element_text(size = 6)) +
   ylab("Final nominal p") +
   xlab("Scenario")
 
 # Display plots with increased height
-cowplot::plot_grid(p1, p2, p3, ncol = 1, labels = c("A", "B", "C"), rel_heights = c(1, 1, 1))
+cowplot::plot_grid(
+  p1, p2, p3,
+  ncol = 1, labels = c("A", "B", "C"), rel_heights = c(1, 1, 1)
+)
 ```
 
-## Summary
+# Summary
 
 We have suggested the concept of spending time and provided 3 examples where
 the approach can be applied to simply adapt a design in a useful way.
@@ -1512,10 +1517,14 @@ of design of a group sequential trial.
 Examples have been demonstrated with the design software of the gsDesign2
 R package and the simulation R package simtrial.
 
-## Session info
+# Session information
+
+\footnotesize
 
 ```{r}
-sessioninfo::session_info(pkgs = "attached")
+sessioninfo::session_info(pkgs = "attached", info = "packages")
 ```
 
-## References
+\normalsize
+
+# References
