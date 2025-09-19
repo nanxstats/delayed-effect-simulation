@@ -1422,7 +1422,7 @@ p1 <- power_summary |>
   coord_flip() +
   ylab("Power") +
   xlab("Scenario") +
-  # Make legend label "Cut.Spending"
+  theme(axis.text.x = element_text(size = 9)) +
   labs(fill = "Cut.Spending")
 
 p2 <- power_summary |>
