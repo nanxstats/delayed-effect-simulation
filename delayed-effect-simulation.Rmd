@@ -1420,9 +1420,9 @@ p1 <- power_summary |>
   cowplot::background_grid(major = "x") +
   ggsci::scale_fill_observable(alpha = 0.8) +
   coord_flip() +
+  theme(axis.text.x = element_text(size = 9)) +
   ylab("Power") +
   xlab("Scenario") +
-  theme(axis.text.x = element_text(size = 9)) +
   labs(fill = "Cut.Spending")
 
 p2 <- power_summary |>
